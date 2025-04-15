@@ -35,7 +35,7 @@
 
 	{#if $boards.length > 0}
 		<h1 class="mx-auto text-lg">Alle Boards</h1>
-		<div class="flex flex-wrap justify-start gap-2">
+		<div class="flex grid grid-flow-col grid-rows-2 overflow-y-auto">
 			{#if $user}
 				{#each $boards.filter((e) => e.pubkey !== $user.pubkey) as board (board.id)}
 					<BoardCard {board} />

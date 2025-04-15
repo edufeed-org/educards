@@ -11,7 +11,7 @@
 		<div class="form-control">
 			<!-- <input type="text" placeholder="Search" class="input input-bordered w-24 md:w-auto" /> -->
 		</div>
-		{#if $user}
+		{#if $user?.pubkey}
 			<div class="dropdown dropdown-end">
 				<div tabindex="0" role="button" class="avatar btn btn-circle btn-ghost">
 					<div class="w-10 rounded-full">
@@ -29,7 +29,7 @@
 						</a>
 					</li>
 					<li><a>Settings</a></li>
-					<li><a>Logout</a></li>
+					<li><a onclick={() => user.set(null)}>Logout</a></li>
 				</ul>
 			</div>
 		{:else}

@@ -63,8 +63,11 @@ export const cardsForColumn = (columnId) => {
 export const user = writable(null);
 
 export const userBoards = derived([user, boards], ([$user, $boards]) => {
-	const newUserBoards = $boards.filter((b) => b.pubkey === $user.pubkey);
-	return newUserBoards;
+	if ($user?.pubkey) {
+		const newUserBoards = $boards.filter((b) => b.pubkey === $user.pubkey);
+		return newUserBoards;
+	}
+	return [];
 });
 
 export const db = writable({
@@ -86,9 +89,9 @@ async function initNDK() {
 
 	const subDelete = ndk.subscribe({ kinds: [5] });
 	subDelete.on('event', async (event) => {
-		const toBeDeletedDs = event.getMatchingTags('a').map((e) => e[1].split(':')[2]);
+		const toBeDeletedDs = event.getMatchingTags('a').map((e) => e[1]);
 		events.update((events) => {
-			return events.filter((e) => !toBeDeletedDs.includes(e.dTag));
+			return events.filter((e) => !toBeDeletedDs.includes(e.tagAddress()));
 		});
 	});
 
