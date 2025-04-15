@@ -1,6 +1,13 @@
 import NDK, { NDKNip07Signer, NDKEvent } from '@nostr-dev-kit/ndk';
 import { get } from 'svelte/store';
-import { db, events, currentBoardId, currentBoard, selectedColumn } from '$lib/db';
+import {
+	db,
+	events,
+	currentBoardAddress,
+	currentBoard,
+	selectedColumn,
+	user as userStore
+} from '$lib/db';
 
 export async function login(method) {
 	const nip07signer = new NDKNip07Signer();
@@ -11,6 +18,8 @@ export async function login(method) {
 		case 'browser-extension': {
 			console.log('login with extension');
 			const user = await nip07signer.user();
+			userStore.set(user);
+			console.log('user', user);
 			db.update((db) => {
 				return { ...db, ndk, user };
 			});
@@ -28,17 +37,21 @@ export function addBoard(board) {
 
 export async function addColumn(column) {
 	const ndk = get(db).ndk;
+	const user = get(userStore);
 	const columnEvent = new NDKEvent(ndk, { kind: 30044, content: 'Column Event' });
 	columnEvent.tags = [['title', column.title]];
 	await columnEvent.publish();
 
 	// add column to Board
-	const existingBoard = await ndk.fetchEvent({
-		kinds: [30043],
-		authors: [columnEvent.pubkey],
-		'#d': [get(currentBoardId)]
-	});
-	existingBoard.tags.push(['a', `30044:${columnEvent.pubkey}:${columnEvent.dTag}`]);
+	const boardD = get(currentBoard).dTag;
+	console.log('board dtag', boardD);
+	// const existingBoard = await ndk.fetchEvent({
+	// 	kinds: [30043],
+	// 	authors: [user.pubkey],
+	// 	'#d': [get(currentBoard).dTag]
+	// });
+	const existingBoard = new NDKEvent(ndk, get(currentBoard));
+	existingBoard.tags.push(['a', `30044:${user.pubkey}:${columnEvent.dTag}`]);
 	existingBoard.publishReplaceable();
 }
 
@@ -49,7 +62,7 @@ export async function addCard(card) {
 
 	const columnEvent = await ndk.fetchEvent({
 		kinds: [30044],
-		authors: [cardEvent.pubkey],
+		// authors: [cardEvent.pubkey],
 		'#d': [get(selectedColumn)]
 	});
 	columnEvent.tags.push(['a', `${cardEvent.kind}:${cardEvent.pubkey}:${cardEvent.dTag}`]);
@@ -126,8 +139,8 @@ export async function publishBoard(board) {
 	const ndk = get(db).ndk;
 	const existingBoard = await ndk.fetchEvent({
 		kinds: [30043],
-		authors: [board.pubkey],
-		'#d': [get(currentBoardId)]
+		// authors: [board.pubkey],
+		'#d': [get(currentBoardAddress)]
 	});
 	const columnIds = board.items.map((e) => e.dTag);
 	let tags = existingBoard.tags.filter((t) => t[0] !== 'a');
@@ -142,7 +155,7 @@ export async function publishCards(column) {
 	const ndk = get(db).ndk;
 	const existingColumn = await ndk.fetchEvent({
 		kinds: [30044],
-		authors: [column.pubkey],
+		// authors: [column.pubkey],
 		ids: [column.id]
 	});
 	const cardIds = column.items.map((e) => e.dTag);
@@ -152,4 +165,19 @@ export async function publishCards(column) {
 	});
 	existingColumn.tags = tags;
 	existingColumn.publishReplaceable();
+}
+
+export async function forkBoard(board) {
+	const ndk = get(db).ndk;
+	const userBoard = new NDKEvent(ndk, {
+		kind: board.kind,
+		content: board.content,
+		tags: board.tags
+	});
+	userBoard.publish();
+}
+
+export async function deleteBoard(board) {
+	const ndk = get(db).ndk;
+	const deletionEvent = await new NDKEvent(ndk, board).delete('user said so', true);
 }

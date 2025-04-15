@@ -1,5 +1,5 @@
 <script>
-	import { db } from '$lib/db';
+	import { db, user } from '$lib/db';
 	import { login } from '$lib/ndk';
 </script>
 
@@ -9,21 +9,18 @@
 	</div>
 	<div class="flex-none gap-2">
 		<div class="form-control">
-			<input type="text" placeholder="Search" class="input input-bordered w-24 md:w-auto" />
+			<!-- <input type="text" placeholder="Search" class="input input-bordered w-24 md:w-auto" /> -->
 		</div>
-		{#if $db.user}
+		{#if $user}
 			<div class="dropdown dropdown-end">
-				<div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+				<div tabindex="0" role="button" class="avatar btn btn-circle btn-ghost">
 					<div class="w-10 rounded-full">
-						<img
-							alt="Tailwind CSS Navbar component"
-							src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"
-						/>
+						<img alt="" src={`https://robohash.org/${$user.pubkey}`} />
 					</div>
 				</div>
 				<ul
 					tabindex="0"
-					class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
+					class="menu dropdown-content menu-sm z-[1] mt-3 w-52 rounded-box bg-base-100 p-2 shadow"
 				>
 					<li>
 						<a class="justify-between">
@@ -40,7 +37,7 @@
 				<button class="btn">Login</button>
 				<ul
 					tabindex="0"
-					class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
+					class="menu dropdown-content menu-sm z-[1] mt-3 w-52 rounded-box bg-base-100 p-2 shadow"
 				>
 					<li><a onclick={() => login('browser-extension')}>Browser Extension</a></li>
 				</ul>

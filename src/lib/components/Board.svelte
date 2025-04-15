@@ -4,10 +4,10 @@
 	import { dndzone } from 'svelte-dnd-action';
 	import AddColumnModal from './AddColumnModal.svelte';
 	import AddCardModal from './AddCardModal.svelte';
-	import { cardsForColumn, columnsForBoard, selectedColumn, currentBoard } from '$lib/db';
-	import { publishBoard, publishCards } from '$lib/ndk';
+	import { cardsForColumn, columnsForBoard, selectedColumn, currentBoard, user } from '$lib/db';
+	import { eventTitle, publishBoard, publishCards } from '$lib/ndk';
 
-	export let boardId;
+	export let boardAddress;
 
 	let addColumnModal;
 	let addCardModal;
@@ -23,7 +23,6 @@
 		col.items = cardsForColumn(col.id);
 		return col;
 	});
-	$: console.log('items', items);
 
 	const flipDurationMs = 200;
 
@@ -62,8 +61,12 @@
 	}
 </script>
 
-<button class="btn" on:click={openColumnModal}>Add column</button>
-
+<div class="flex flex-row items-center justify-between">
+	<h1 class="ml-5 text-lg">{eventTitle($currentBoard)}</h1>
+	{#if $user && $user.pubkey === $currentBoard.pubkey}
+		<button class="btn mr-5" on:click={openColumnModal}>Add column</button>
+	{/if}
+</div>
 <section
 	class="board flex flex-nowrap"
 	use:dndzone={{ items, flipDurationMs, type: 'columns' }}
@@ -72,17 +75,25 @@
 >
 	{#each items as column (column.id)}
 		<div class="column" animate:flip={{ duration: flipDurationMs }}>
-			<div class="column-title">{column.dTag}</div>
-			<button class="btn" on:click={() => deleteColumn(column.id)}>Delete Column</button>
-			<div>
-				<button
-					class="btn"
-					on:click={() => {
-						// set selected columns
-						$selectedColumn = column.dTag;
-						openCardModal();
-					}}>Add Card</button
-				>
+			<div class="flex">
+				<div class="column-title">{column.dTag}</div>
+				{#if $user && $user.pubkey === $currentBoard.pubkey}
+					<button class="btn btn-error ml-auto mr-0" on:click={() => deleteColumn(column.id)}
+						>🗑️</button
+					>
+				{/if}
+			</div>
+			<div class="flex">
+				{#if $user && $user.pubkey === $currentBoard.pubkey}
+					<button
+						class="btn mx-auto"
+						on:click={() => {
+							// set selected columns
+							$selectedColumn = column.dTag;
+							openCardModal();
+						}}>Add Card</button
+					>
+				{/if}
 			</div>
 			<div
 				class="column-content"
