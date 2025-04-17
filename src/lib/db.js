@@ -1,6 +1,6 @@
 import { writable, derived, get } from 'svelte/store';
-import NDK from '@nostr-dev-kit/ndk';
-import { columnsDsFromBoard } from './ndk';
+import NDK, { NDKUser } from '@nostr-dev-kit/ndk';
+import { columnAddressesFromBoard } from './ndk';
 
 export const events = writable([]);
 
@@ -31,7 +31,7 @@ export const columnsForBoard = derived(
 		if (currentBoard === undefined) {
 			return [];
 		}
-		let boardColumnIds = columnsDsFromBoard(currentBoard);
+		let boardColumnIds = columnAddressesFromBoard(currentBoard);
 		const cols = boardColumnIds.map((d) => {
 			return $columns.find((c) => c.tagAddress() === d);
 		});
@@ -60,6 +60,7 @@ export const cardsForColumn = (columnId) => {
 	}
 };
 
+/** @type {NDKUser} */
 export const user = writable(null);
 
 export const userBoards = derived([user, boards], ([$user, $boards]) => {

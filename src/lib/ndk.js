@@ -2,7 +2,8 @@ import NDK, { NDKNip07Signer, NDKEvent } from '@nostr-dev-kit/ndk';
 import { get } from 'svelte/store';
 import {
 	db,
-	events,
+	events as eventStore,
+	columns as columnStore,
 	currentBoardAddress,
 	currentBoard,
 	selectedColumn,
@@ -126,25 +127,55 @@ export async function getBoards() {
 	const ndk = get(db).ndk;
 	const sub = ndk.subscribe({ kinds: [30043, 30044, 30045] }); // listen for boards, columns indexes
 	sub.on('event', async (event) => {
-		events.update((events) => [...events, event]);
+		eventStore.update((events) => [...events, event]);
 	});
 }
-// returns the d tags of the columns from the board
-export function columnsDsFromBoard(board) {
+/** returns the event adresses of the columns from the board
+/* 
+ */
+export function columnAddressesFromBoard(board) {
 	const columnDs = board.tags.filter((t) => t[0] === 'a').map((t) => t[1]);
 	return columnDs;
 }
 
+/** Gets the addresses events from another event
+/* @param {NDKEvent} event 
+ */
+async function addressedEvents(event) {
+	const ndk = get(db).ndk;
+	let columnAddresses = columnAddressesFromBoard(event);
+	const cols = await Promise.all(
+		columnAddresses.map(async (c) => {
+			const [kind, pubkey, dTag] = c.split(':');
+			console.log(kind, pubkey, dTag);
+			const col = await ndk.fetchEvent({
+				kinds: [Number(kind)],
+				authors: [pubkey],
+				'#d': [dTag]
+			});
+			return col;
+		})
+	);
+	console.log('got addressedEvents', cols);
+
+	if (cols.includes(undefined)) return [];
+	return cols;
+}
+
 export async function publishBoard(board) {
 	const ndk = get(db).ndk;
-	const existingBoard = await ndk.fetchEvent({
-		kinds: [30043],
-		// authors: [board.pubkey],
-		'#d': [get(currentBoardAddress)]
-	});
+	console.log(get(currentBoardAddress));
+	const existingBoard = get(currentBoard);
+	// const existingBoard = await ndk.fetchEvent({
+	// 	kinds: [30043],
+	// 	authors: [board.pubkey],
+	// 	'#d': [board.dTag] // TODO does this work with address? guess it needs to be the tag
+	// });
 	const columnIds = board.items.map((e) => e.dTag);
 	let tags = existingBoard.tags.filter((t) => t[0] !== 'a');
 	columnIds.forEach((dTag) => {
+		// TODO use user pubkey here so that
+		// after a fork the correct column tags are assigned?
 		tags.push(['a', `30044:${board.pubkey}:${dTag}`]);
 	});
 	existingBoard.tags = tags;
@@ -167,17 +198,75 @@ export async function publishCards(column) {
 	existingColumn.publishReplaceable();
 }
 
+/** takes existing tags and replaces the pubkey in the Tag Addresses
+ * @param {Array<import('@nostr-dev-kit/ndk').NDKTag>} tags
+ * @param {string} pubkey
+ * @returns {Array<import('@nostr-dev-kit/ndk').NDKTag>}
+ */
+function forkTags(tags, pubkey) {
+	return tags.map((t) => {
+		if (t[0] === 'a') {
+			const [kind, pubkeyOrigin, dTag] = t[1].split(':');
+			return [t[0], `${kind}:${pubkey}:${dTag}`];
+		} else {
+			return t;
+		}
+	});
+}
+
+/**
+ * Forks a board and all its content
+ * @param {NDKEvent} board
+ */
 export async function forkBoard(board) {
 	const ndk = get(db).ndk;
+	const user = get(userStore);
+
 	const userBoard = new NDKEvent(ndk, {
 		kind: board.kind,
 		content: board.content,
-		tags: board.tags
+		tags: forkTags(board.tags, user.pubkey)
 	});
+
+	// fork columns
+	const boardColumns = await addressedEvents(board);
+	const newColumns = boardColumns.map((originCol) => {
+		const col = new NDKEvent(ndk, {
+			kind: originCol.kind,
+			content: originCol.content,
+			tags: forkTags(originCol.tags, user.pubkey)
+		});
+		return col;
+	});
+
+	// fork cards
+	/** @type {Array<NDKEvent>} */
+	const cardEvents = [];
+	await Promise.all(
+		boardColumns.map(async (col) => {
+			const oldCards = await addressedEvents(col);
+			oldCards.forEach((oldCard) => {
+				cardEvents.push(
+					new NDKEvent(ndk, {
+						kind: oldCard.kind,
+						content: oldCard.content,
+						tags: forkTags(oldCard.tags, user.pubkey)
+					})
+				);
+			});
+		})
+	);
+
 	userBoard.publish();
+	newColumns.forEach((col) => col.publish());
+	cardEvents.forEach((card) => card.publish());
 }
 
+/**
+ * Delete a board
+ * @param {NDKEvent} board
+ */
 export async function deleteBoard(board) {
 	const ndk = get(db).ndk;
-	const deletionEvent = await new NDKEvent(ndk, board).delete('user said so', true);
+	await new NDKEvent(ndk, board).delete('user said so', true);
 }
