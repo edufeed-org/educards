@@ -59,11 +59,15 @@
 		const updatedColumnItems = column.items.filter((e) => e.id !== itemId);
 		publishCards({ ...column, items: updatedColumnItems });
 	}
+
+	function userAndBoardMatch(user, board) {
+		return user !== undefined && board && user?.pubkey === board?.pubkey;
+	}
 </script>
 
 <div class="flex flex-row items-center justify-between">
 	<h1 class="ml-5 text-lg">{eventTitle($currentBoard)}</h1>
-	{#if $user && $user.pubkey === $currentBoard.pubkey}
+	{#if userAndBoardMatch($user, $currentBoard)}
 		<button class="btn mr-5" on:click={openColumnModal}>Add column</button>
 	{/if}
 </div>
@@ -75,40 +79,46 @@
 >
 	{#each items as column (column.id)}
 		<div class="column" animate:flip={{ duration: flipDurationMs }}>
-			<div class="flex">
-				<div class="column-title">{column.dTag}</div>
-				{#if $user && $user.pubkey === $currentBoard.pubkey}
-					<button class="btn btn-error ml-auto mr-0" on:click={() => deleteColumn(column.id)}
-						>🗑️</button
+			{#if column !== undefined}
+				<div class="flex">
+					<div class="column-title">{column.dTag}</div>
+					{#if userAndBoardMatch($user, $currentBoard)}
+						<button class="btn btn-error ml-auto mr-0" on:click={() => deleteColumn(column.id)}
+							>🗑️</button
+						>
+					{/if}
+				</div>
+				<div class="flex">
+					{#if userAndBoardMatch($user, $currentBoard)}
+						<button
+							class="btn mx-auto"
+							on:click={() => {
+								// set selected columns
+								$selectedColumn = column.dTag;
+								openCardModal();
+							}}>Add Card</button
+						>
+					{/if}
+				</div>
+
+				{#if column.items.every((e) => e !== undefined)}
+					<div
+						class="column-content"
+						use:dndzone={{ items: column.items, flipDurationMs }}
+						on:consider={(e) => handleDndConsiderCards(column.id, e)}
+						on:finalize={(e) => handleDndFinalizeCards(column.id, e)}
 					>
-				{/if}
-			</div>
-			<div class="flex">
-				{#if $user && $user.pubkey === $currentBoard.pubkey}
-					<button
-						class="btn mx-auto"
-						on:click={() => {
-							// set selected columns
-							$selectedColumn = column.dTag;
-							openCardModal();
-						}}>Add Card</button
-					>
-				{/if}
-			</div>
-			<div
-				class="column-content"
-				use:dndzone={{ items: column.items, flipDurationMs }}
-				on:consider={(e) => handleDndConsiderCards(column.id, e)}
-				on:finalize={(e) => handleDndFinalizeCards(column.id, e)}
-			>
-				{#each column.items as item (item.id)}
-					<div class="card" animate:flip={{ duration: flipDurationMs }}>
-						{item.content}
-						{item.dTag}
-						<button on:click={() => deleteCard(column, item.id)}>Delete</button>
+						<!-- {@debug column} -->
+						{#each column.items as item (item?.id ?? item)}
+							<div class="card" animate:flip={{ duration: flipDurationMs }}>
+								{item.content}
+								{item.dTag}
+								<button on:click={() => deleteCard(column, item.id)}>Delete</button>
+							</div>
+						{/each}
 					</div>
-				{/each}
-			</div>
+				{/if}
+			{/if}
 		</div>
 	{/each}
 </section>

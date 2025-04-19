@@ -15,10 +15,11 @@ export async function login(method) {
 	const ndk = get(db).ndk;
 	ndk.signer = nip07signer;
 
+	let user = {};
 	switch (method) {
 		case 'browser-extension': {
 			console.log('login with extension');
-			const user = await nip07signer.user();
+			user = await nip07signer.user();
 			userStore.set(user);
 			console.log('user', user);
 			db.update((db) => {
@@ -103,8 +104,12 @@ async function eventTagToColumn(eventTag) {
 	return { id: d, title, items, event };
 }
 
+/**
+ * @param {NDKEvent} event
+ */
 export function eventTitle(event) {
-	const title = event.tags.find((e) => e[0] === 'title')[1];
+	if (event === undefined) return '';
+	const title = event.tags.find((e) => e[0] === 'title')[1] ?? '';
 	return title;
 }
 
