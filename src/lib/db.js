@@ -73,16 +73,73 @@ export const userBoards = derived([user, boards], ([$user, $boards]) => {
 
 export const db = writable({
 	user: null,
-	ndk: initNDK(),
 	currentBoardId: null
 });
 
-async function initNDK() {
-	const ndk = new NDK({
-		explicitRelayUrls: ['ws://localhost:10547']
-	});
-	await ndk.connect();
+// Create a writable store for the NDK instance
+const createNDKStore = () => {
+	const { subscribe, set, update } = writable(null);
 
+	return {
+		subscribe,
+		init: async (
+			// FIXME use a defualt relay list from config
+			relayUrls = [
+				// 'wss://relay.damus.io'
+				// 'wss://relay.nostr.band',
+				// 'wss://nos.lol',
+				// 'ws://localhost:10547'
+				'wss://relay-k12.edufeed.org'
+				// Add more default relays here
+			]
+		) => {
+			try {
+				const ndk = new NDK({
+					explicitRelayUrls: relayUrls,
+					autoConnectUserRelays: true
+				});
+
+				// Connect to relays
+				await ndk.connect();
+				console.log('NDK Connected to relays');
+
+				// Update the store with the connected instance
+				set(ndk);
+				return ndk;
+			} catch (error) {
+				console.error('Failed to initialize NDK:', error);
+				throw error;
+			}
+		}
+
+		// // Method to sign in with extension (NIP-07)
+		// signInWithExtension: async () => {
+		// 	return update((ndk) => {
+		// 		if (!ndk) throw new Error('NDK not initialized');
+
+		// 		const signer = new NDKNip07Signer();
+		// 		ndk.signer = signer;
+		// 		return ndk;
+		// 	});
+		// },
+
+		// // Method to disconnect/cleanup
+		// disconnect: () => {
+		// 	update((ndk) => {
+		// 		if (ndk) {
+		// 			// Perform any cleanup if needed
+		// 		}
+		// 		return null;
+		// 	});
+		// }
+	};
+};
+
+// Export the NDK store
+export const ndkStore = createNDKStore();
+
+export async function initNDK() {
+	const ndk = get(ndkStore);
 	const sub = ndk.subscribe({ kinds: [30043, 30044, 30045] }); // listen for boards, columns indexes
 	sub.on('event', async (event) => {
 		events.update((events) => [...events, event]);

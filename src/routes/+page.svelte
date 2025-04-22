@@ -10,10 +10,6 @@
 	function openModal() {
 		addBoardModal.showModal();
 	}
-
-	onMount(async () => {
-		await getBoards();
-	});
 </script>
 
 <div class="flex w-full">

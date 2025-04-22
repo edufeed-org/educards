@@ -7,12 +7,13 @@ import {
 	currentBoardAddress,
 	currentBoard,
 	selectedColumn,
-	user as userStore
+	user as userStore,
+	ndkStore
 } from '$lib/db';
 
 export async function login(method) {
 	const nip07signer = new NDKNip07Signer();
-	const ndk = get(db).ndk;
+	const ndk = get(ndkStore);
 	ndk.signer = nip07signer;
 
 	let user = {};
@@ -29,8 +30,12 @@ export async function login(method) {
 	}
 }
 
+function getNdk() {
+	return get(ndkStore);
+}
+
 export function addBoard(board) {
-	const ndk = get(db).ndk;
+	const ndk = get(ndkStore);
 	const event = new NDKEvent(ndk, { kind: 30043, content: 'Board Event' });
 	const tags = [['title', board.title]];
 	event.tags = tags;
@@ -38,7 +43,7 @@ export function addBoard(board) {
 }
 
 export async function addColumn(column) {
-	const ndk = get(db).ndk;
+	const ndk = getNdk();
 	const user = get(userStore);
 	const columnEvent = new NDKEvent(ndk, { kind: 30044, content: 'Column Event' });
 	columnEvent.tags = [['title', column.title]];
@@ -58,7 +63,7 @@ export async function addColumn(column) {
 }
 
 export async function addCard(card) {
-	const ndk = get(db).ndk;
+	const ndk = getNdk();
 	const cardEvent = new NDKEvent(ndk, { kind: 30045, content: card.title });
 	await cardEvent.publish();
 
@@ -72,7 +77,7 @@ export async function addCard(card) {
 }
 
 async function eventTagToCard(eventTag) {
-	const ndk = get(db).ndk;
+	const ndk = getNdk();
 	const [kind, pubkey, d] = eventTag.split(':');
 	const event = await ndk.fetchEvent({
 		kinds: [30045],
@@ -83,7 +88,7 @@ async function eventTagToCard(eventTag) {
 }
 
 async function eventTagToColumn(eventTag) {
-	const ndk = get(db).ndk;
+	const ndk = getNdk();
 	const [kind, pubkey, d] = eventTag.split(':');
 	const event = await ndk.fetchEvent({
 		kind,
@@ -129,7 +134,7 @@ async function eventToBoard(event) {
 }
 
 export async function getBoards() {
-	const ndk = get(db).ndk;
+	const ndk = get(ndkStore);
 	const sub = ndk.subscribe({ kinds: [30043, 30044, 30045] }); // listen for boards, columns indexes
 	sub.on('event', async (event) => {
 		eventStore.update((events) => [...events, event]);
@@ -147,7 +152,7 @@ export function columnAddressesFromBoard(board) {
 /* @param {NDKEvent} event 
  */
 async function addressedEvents(event) {
-	const ndk = get(db).ndk;
+	const ndk = getNdk();
 	let columnAddresses = columnAddressesFromBoard(event);
 	const cols = await Promise.all(
 		columnAddresses.map(async (c) => {
@@ -168,7 +173,7 @@ async function addressedEvents(event) {
 }
 
 export async function publishBoard(board) {
-	const ndk = get(db).ndk;
+	const ndk = getNdk();
 	console.log(get(currentBoardAddress));
 	const existingBoard = get(currentBoard);
 	// const existingBoard = await ndk.fetchEvent({
@@ -188,7 +193,7 @@ export async function publishBoard(board) {
 }
 
 export async function publishCards(column) {
-	const ndk = get(db).ndk;
+	const ndk = getNdk();
 	const existingColumn = await ndk.fetchEvent({
 		kinds: [30044],
 		// authors: [column.pubkey],
@@ -224,7 +229,7 @@ function forkTags(tags, pubkey) {
  * @param {NDKEvent} board
  */
 export async function forkBoard(board) {
-	const ndk = get(db).ndk;
+	const ndk = getNdk();
 	const user = get(userStore);
 
 	const userBoard = new NDKEvent(ndk, {
@@ -272,6 +277,6 @@ export async function forkBoard(board) {
  * @param {NDKEvent} board
  */
 export async function deleteBoard(board) {
-	const ndk = get(db).ndk;
+	const ndk = getNdk();
 	await new NDKEvent(ndk, board).delete('user said so', true);
 }
