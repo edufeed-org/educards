@@ -73,7 +73,7 @@ export const userBoards = derived([user, boards], ([$user, $boards]) => {
 
 export const db = writable({
 	user: null,
-	ndk: await initNDK(),
+	ndk: initNDK(),
 	currentBoardId: null
 });
 
