@@ -18,17 +18,18 @@
 						<img alt="" src={`https://robohash.org/${$user.pubkey}`} />
 					</div>
 				</div>
+				<!-- TODO add profile and settings -->
 				<ul
 					tabindex="0"
 					class="menu dropdown-content menu-sm z-[1] mt-3 w-52 rounded-box bg-base-100 p-2 shadow"
 				>
-					<li>
-						<a class="justify-between">
-							Profile
-							<span class="badge">New</span>
-						</a>
-					</li>
-					<li><a>Settings</a></li>
+					<!-- 	<li> -->
+					<!-- 		<a class="justify-between"> -->
+					<!-- 			Profile -->
+					<!-- 			<span class="badge">New</span> -->
+					<!-- 		</a> -->
+					<!-- 	</li> -->
+					<!-- 	<li><a>Settings</a></li> -->
 					<li><a onclick={() => user.set(null)}>Logout</a></li>
 				</ul>
 			</div>
