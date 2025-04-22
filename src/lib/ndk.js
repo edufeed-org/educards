@@ -1,4 +1,4 @@
-import NDK, { NDKNip07Signer, NDKEvent } from '@nostr-dev-kit/ndk';
+import NDK, { NDKNip07Signer, NDKEvent, NDKUser } from '@nostr-dev-kit/ndk';
 import { get } from 'svelte/store';
 import {
 	db,
@@ -16,11 +16,13 @@ export async function login(method) {
 	const ndk = get(ndkStore);
 	ndk.signer = nip07signer;
 
+	/** @type {NDKUser | null} */
 	let user = {};
 	switch (method) {
 		case 'browser-extension': {
 			console.log('login with extension');
 			user = await nip07signer.user();
+			await user.fetchProfile();
 			userStore.set(user);
 			console.log('user', user);
 			db.update((db) => {
