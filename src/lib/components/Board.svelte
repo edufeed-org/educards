@@ -26,12 +26,8 @@
 	}
 	function handleDndFinalizeColumns(e) {
 		items = e.detail.items;
-
 		// store current state
 		publishBoard({ ...$currentBoard, items });
-	}
-	function handleClick(e) {
-		alert('dragabble elements are still clickable :)');
 	}
 </script>
 

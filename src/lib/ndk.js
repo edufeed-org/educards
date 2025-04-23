@@ -198,7 +198,6 @@ export async function publishBoard(board) {
 }
 
 export async function publishCards(column) {
-	const ndk = getNdk();
 	column.publishReplaceable();
 }
 
