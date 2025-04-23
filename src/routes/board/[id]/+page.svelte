@@ -3,7 +3,6 @@
 	import { currentBoardAddress } from '$lib/db.js';
 	export let data;
 
-	console.log(data.id);
 	$currentBoardAddress = data.id;
 </script>
 

@@ -10,12 +10,15 @@ export const boards = derived(events, ($events) => {
 	return deduped;
 });
 export const currentBoardAddress = writable('');
-export const currentBoard = derived(currentBoardAddress, ($currentBoardAddress) => {
-	console.log('looking for current board');
-	const board = get(events).find((e) => e.tagAddress() === $currentBoardAddress);
-	console.log(board);
-	return board;
-});
+export const currentBoard = derived(
+	[currentBoardAddress, events],
+	([$currentBoardAddress, $events]) => {
+		console.log('looking for current board');
+		const board = get(events).find((e) => e.tagAddress() === $currentBoardAddress);
+		console.log(board);
+		return board;
+	}
+);
 export const columns = derived(events, ($events) => {
 	const allColumns = $events.filter((e) => e.kind === 30044);
 	const deduped = deduplicateKeepMostRecent(allColumns);
@@ -87,9 +90,9 @@ const createNDKStore = () => {
 				// 'wss://relay.damus.io'
 				// 'wss://relay.nostr.band',
 				// 'wss://nos.lol',
-				// 'ws://localhost:10547'
-				'wss://purplepag.es',
-				'wss://relay-k12.edufeed.org'
+				'ws://localhost:10547'
+				// 'wss://purplepag.es',
+				// 'wss://relay-k12.edufeed.org'
 				// Add more default relays here
 			]
 		) => {
@@ -169,4 +172,13 @@ function deduplicateKeepMostRecent(array) {
 		}
 	});
 	return Array.from(mostRecentMap.values());
+}
+
+export function userAndBoardMatch(user, board) {
+	return user !== undefined && board && user?.pubkey === board?.pubkey;
+}
+
+export function deleteColumn(columnId) {
+	const updatedBoardItems = items.filter((e) => e.id !== columnId);
+	publishBoard({ ...$currentBoard, items: updatedBoardItems });
 }

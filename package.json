@@ -34,9 +34,11 @@
 		"vite": "^6.0.0"
 	},
 	"dependencies": {
+		"@cartamd/plugin-emoji": "^4.3.0",
 		"@nostr-dev-kit/ndk": "^2.11.0",
 		"@tailwindcss/vite": "^4.1.4",
 		"carta-md": "^4.9.0",
+		"marked": "^15.0.9",
 		"tailwindcss": "^4.1.4"
 	}
 }

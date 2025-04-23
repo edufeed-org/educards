@@ -1,9 +1,12 @@
 <script>
 	import { Carta, MarkdownEditor } from 'carta-md';
+	import { emoji } from '@cartamd/plugin-emoji';
 	// Component default theme
 	import 'carta-md/default.css';
 
-	const carta = new Carta();
+	const carta = new Carta({
+		extensions: [emoji()]
+	});
 
 	export let value = '';
 </script>
