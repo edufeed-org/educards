@@ -24,7 +24,6 @@ export async function login(method) {
 			user = await nip07signer.user();
 			await user.fetchProfile();
 			userStore.set(user);
-			console.log('user', user);
 			db.update((db) => {
 				return { ...db, ndk, user };
 			});
@@ -53,12 +52,6 @@ export async function addColumn(column) {
 
 	// add column to Board
 	const boardD = get(currentBoard).dTag;
-	console.log('board dtag', boardD);
-	// const existingBoard = await ndk.fetchEvent({
-	// 	kinds: [30043],
-	// 	authors: [user.pubkey],
-	// 	'#d': [get(currentBoard).dTag]
-	// });
 	const existingBoard = new NDKEvent(ndk, get(currentBoard));
 	existingBoard.tags.push(['a', `30044:${user.pubkey}:${columnEvent.dTag}`]);
 	existingBoard.publishReplaceable();
@@ -178,27 +171,37 @@ async function addressedEvents(event) {
 }
 
 export async function publishBoard(board) {
-	const ndk = getNdk();
-	console.log(get(currentBoardAddress));
-	const existingBoard = get(currentBoard);
-	// const existingBoard = await ndk.fetchEvent({
-	// 	kinds: [30043],
-	// 	authors: [board.pubkey],
-	// 	'#d': [board.dTag] // TODO does this work with address? guess it needs to be the tag
-	// });
-	const columnIds = board.items.map((e) => e.dTag);
-	let tags = existingBoard.tags.filter((t) => t[0] !== 'a');
-	columnIds.forEach((dTag) => {
-		// TODO use user pubkey here so that
-		// after a fork the correct column tags are assigned?
-		tags.push(['a', `30044:${board.pubkey}:${dTag}`]);
-	});
-	existingBoard.tags = tags;
-	existingBoard.publishReplaceable();
+	try {
+		const ndk = getNdk();
+		const existingBoard = get(currentBoard);
+		// const existingBoard = await ndk.fetchEvent({
+		// 	kinds: [30043],
+		// 	authors: [board.pubkey],
+		// 	'#d': [board.dTag] // TODO does this work with address? guess it needs to be the tag
+		// });
+		const columnIds = board.items.map((e) => e.dTag);
+		let tags = existingBoard.tags.filter((t) => t[0] !== 'a');
+		columnIds.forEach((dTag) => {
+			// TODO use user pubkey here so that
+			// after a fork the correct column tags are assigned?
+			tags.push(['a', `30044:${board.pubkey}:${dTag}`]);
+		});
+		existingBoard.tags = tags;
+		await existingBoard.publishReplaceable();
+	} catch (error) {
+		alert('Please log in before dragging');
+		console.error(error);
+	}
 }
 
 export async function publishCards(column) {
-	column.publishReplaceable();
+	try {
+		const event = new NDKEvent(get(ndkStore), column);
+		await event.publishReplaceable();
+	} catch (error) {
+		alert('Please log in before dragging');
+		console.error(error);
+	}
 }
 
 /** takes existing tags and replaces the pubkey in the Tag Addresses

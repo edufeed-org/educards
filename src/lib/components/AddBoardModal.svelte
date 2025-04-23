@@ -14,15 +14,14 @@
 <!-- Open the modal using ID.showModal() method -->
 <dialog id="add-board" class="modal" bind:this={modalRef}>
 	<div class="modal-box">
-		<h3 class="text-lg font-bold">Hello!</h3>
-		<p class="py-4">Press ESC key or click the button below to close</p>
+		<h3 class="text-lg font-bold">Gib deinem Board einen Titel</h3>
 		<label class="input input-bordered">
 			<input type="text" bind:value={title} />
 		</label>
 		<div class="modal-action">
 			<form method="dialog">
-				<button class="btn">Close</button>
-				<button onclick={() => createBoard()}>Create Board!</button>
+				<button class="btn btn-warning">Close</button>
+				<button class="btn btn-success" onclick={() => createBoard()}>Create Board!</button>
 			</form>
 		</div>
 	</div>

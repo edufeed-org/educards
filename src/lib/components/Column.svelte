@@ -5,8 +5,16 @@
 	import Card from './Card.svelte';
 	import PlusCircleFill from '$lib/icons/PlusCircleFill.svelte';
 	import AddCardModal from './AddCardModal.svelte';
-	import { selectedColumn, currentBoard, user, userAndBoardMatch, deleteColumn } from '$lib/db';
+	import {
+		selectedColumn,
+		currentBoard,
+		user,
+		userAndBoardMatch,
+		deleteColumn,
+		ndkStore
+	} from '$lib/db';
 	import { eventTitle, publishCards } from '$lib/ndk';
+	import { NDKEvent } from '@nostr-dev-kit/ndk';
 
 	export let column;
 	export let flipDurationMs;
@@ -27,7 +35,13 @@
 		const colIdx = items.findIndex((c) => c.id === cid);
 		items[colIdx].items = e.detail.items;
 		items = [...items];
-		publishCards(items[colIdx]);
+
+		const newColumn = new NDKEvent(ndkStore, items[colIdx]);
+		newColumn.tags = newColumn.tags.filter((e) => e[0] !== 'a');
+		e.detail.items.forEach((card) => {
+			newColumn.tags.push(['a', card.tagAddress()]);
+		});
+		publishCards(newColumn);
 	}
 </script>
 
