@@ -66,7 +66,9 @@ export async function addColumn(column) {
 
 export async function addCard(card) {
 	const ndk = getNdk();
-	const cardEvent = new NDKEvent(ndk, { kind: 30045, content: card.title });
+	const cardEvent = new NDKEvent(ndk, { kind: 30045, content: card.content });
+	cardEvent.tags.push(['title', card.title]);
+	console.log('card event', cardEvent);
 	await cardEvent.publish();
 
 	const columnEvent = await ndk.fetchEvent({
@@ -112,11 +114,13 @@ async function eventTagToColumn(eventTag) {
 }
 
 /**
+ * Gets the title tag of an event
  * @param {NDKEvent} event
+ * @returns {string}
  */
 export function eventTitle(event) {
 	if (event === undefined) return '';
-	const title = event.tags.find((e) => e[0] === 'title')[1] ?? '';
+	const title = event.tags?.find((e) => e[0] === 'title')?.[1] ?? '';
 	return title;
 }
 

@@ -111,8 +111,8 @@
 						<!-- {@debug column} -->
 						{#each column.items as item (item?.id ?? item)}
 							<div class="card" animate:flip={{ duration: flipDurationMs }}>
+								{eventTitle(item)}
 								{item.content}
-								{item.dTag}
 								<button on:click={() => deleteCard(column, item.id)}>Delete</button>
 							</div>
 						{/each}
