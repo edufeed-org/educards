@@ -90,9 +90,9 @@ const createNDKStore = () => {
 				// 'wss://relay.damus.io'
 				// 'wss://relay.nostr.band',
 				// 'wss://nos.lol',
-				'ws://localhost:10547'
-				// 'wss://purplepag.es',
-				// 'wss://relay-k12.edufeed.org'
+				// 'ws://localhost:10547'
+				'wss://purplepag.es',
+				'wss://relay-k12.edufeed.org'
 				// Add more default relays here
 			]
 		) => {
