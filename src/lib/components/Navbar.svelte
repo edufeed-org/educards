@@ -1,5 +1,5 @@
 <script>
-	import { db, user } from '$lib/db';
+	import { user } from '$lib/db';
 	import { login } from '$lib/ndk';
 </script>
 
