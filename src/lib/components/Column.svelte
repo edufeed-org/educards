@@ -1,5 +1,6 @@
 <script>
 	import { dndzone } from 'svelte-dnd-action';
+	import { flip } from 'svelte/animate';
 
 	import Card from './Card.svelte';
 	import PlusCircleFill from '$lib/icons/PlusCircleFill.svelte';
@@ -66,11 +67,11 @@
 		>
 			{#each column.items as item (item?.id ?? item)}
 				<div class="my-1 p-1" animate:flip={{ duration: flipDurationMs }}>
-					<Card card={item} />
+					<Card card={item} {column} />
 				</div>
 			{/each}
 		</div>
 	{/if}
 {/if}
 
-<AddCardModal bind:modalRef={addCardModal} />
+<AddCardModal bind:modalRef={addCardModal} {column} />

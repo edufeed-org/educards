@@ -1,6 +1,7 @@
 import { writable, derived, get } from 'svelte/store';
-import NDK, { NDKUser } from '@nostr-dev-kit/ndk';
+import NDK, { NDKEvent, NDKUser } from '@nostr-dev-kit/ndk';
 import { columnAddressesFromBoard } from './ndk';
+import { publishCards } from './ndk';
 
 export const events = writable([]);
 
@@ -13,9 +14,7 @@ export const currentBoardAddress = writable('');
 export const currentBoard = derived(
 	[currentBoardAddress, events],
 	([$currentBoardAddress, $events]) => {
-		console.log('looking for current board');
 		const board = get(events).find((e) => e.tagAddress() === $currentBoardAddress);
-		console.log(board);
 		return board;
 	}
 );
@@ -42,6 +41,7 @@ export const columnsForBoard = derived(
 		return cols;
 	}
 );
+// FIXME dTag of selected column
 export const selectedColumn = writable('');
 export const cards = derived(events, ($events) => {
 	const allCards = $events.filter((e) => e.kind === 30045);
@@ -181,4 +181,26 @@ export function userAndBoardMatch(user, board) {
 export function deleteColumn(columnId) {
 	const updatedBoardItems = items.filter((e) => e.id !== columnId);
 	publishBoard({ ...$currentBoard, items: updatedBoardItems });
+}
+
+export function replaceTagArray(tags, key, newArray) {
+	const index = tags.findIndex((tag) => tag[0] === key);
+
+	if (index !== -1) {
+		tags[index] = newArray;
+	} else {
+		tags.push(newArray);
+	}
+
+	return tags;
+}
+
+/**
+ * @param {NDKEvent} card
+ * @param {NDKEvent} column
+ */
+export function deleteCard(card, column) {
+	const updatedColumnTags = column.tags.filter((e) => e[1] !== card.tagAddress());
+	column.tags = updatedColumnTags;
+	publishCards(column);
 }

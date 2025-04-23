@@ -64,20 +64,19 @@ export async function addColumn(column) {
 	existingBoard.publishReplaceable();
 }
 
-export async function addCard(card) {
+/**
+ * @param {NDKEvent} card
+ * @param {NDKEvent} column
+ */
+export async function addCard(card, column) {
 	const ndk = getNdk();
-	const cardEvent = new NDKEvent(ndk, { kind: 30045, content: card.content });
-	cardEvent.tags.push(['title', card.title]);
-	console.log('card event', cardEvent);
-	await cardEvent.publish();
+	const cardEvent = new NDKEvent(ndk, card);
+	console.log('add card event', cardEvent);
+	await cardEvent.publishReplaceable();
 
-	const columnEvent = await ndk.fetchEvent({
-		kinds: [30044],
-		// authors: [cardEvent.pubkey],
-		'#d': [get(selectedColumn)]
-	});
-	columnEvent.tags.push(['a', `${cardEvent.kind}:${cardEvent.pubkey}:${cardEvent.dTag}`]);
-	columnEvent?.publishReplaceable();
+	console.log('column event', column);
+	column.tags.push(['a', `${cardEvent.kind}:${cardEvent.pubkey}:${cardEvent.dTag}`]);
+	column.publishReplaceable();
 }
 
 async function eventTagToCard(eventTag) {
@@ -200,18 +199,7 @@ export async function publishBoard(board) {
 
 export async function publishCards(column) {
 	const ndk = getNdk();
-	const existingColumn = await ndk.fetchEvent({
-		kinds: [30044],
-		// authors: [column.pubkey],
-		ids: [column.id]
-	});
-	const cardIds = column.items.map((e) => e.dTag);
-	let tags = existingColumn.tags.filter((t) => t[0] !== 'a');
-	cardIds.forEach((dTag) => {
-		tags.push(['a', `30045:${column.pubkey}:${dTag}`]);
-	});
-	existingColumn.tags = tags;
-	existingColumn.publishReplaceable();
+	column.publishReplaceable();
 }
 
 /** takes existing tags and replaces the pubkey in the Tag Addresses
